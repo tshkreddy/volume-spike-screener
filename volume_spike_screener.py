@@ -12,14 +12,22 @@ RATE_LIMIT_SLEEP = 1.2  # seconds between requests
 # Get all USDT perpetual futures symbols
 def get_symbols():
     url = f"{BINANCE_FUTURES_URL}/fapi/v1/exchangeInfo"
-    res = requests.get(url)
-    data = res.json()
-    symbols = [
-        s["symbol"]
-        for s in data["symbols"]
-        if s["contractType"] == "PERPETUAL" and s["quoteAsset"] == "USDT"
-    ]
-    return symbols
+    try:
+        res = requests.get(url, timeout=10)
+        res.raise_for_status()
+        data = res.json()
+        if "symbols" not in data:
+            st.error(f"Unexpected API response: {data}")
+            return []
+        symbols = [
+            s["symbol"]
+            for s in data["symbols"]
+            if s["contractType"] == "PERPETUAL" and s["quoteAsset"] == "USDT"
+        ]
+        return symbols
+    except Exception as e:
+        st.error(f"Error fetching Binance symbols: {e}")
+        return []
 
 
 # Paginate klines to fetch full history for Y days
